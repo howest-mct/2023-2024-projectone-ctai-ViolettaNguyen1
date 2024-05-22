@@ -1,12 +1,12 @@
 # Project Information
 
-**FIRST NAME LAST NAME:** A B
+**FIRST NAME LAST NAME:** Viola Nguyen
 
-**Sparring Partner:** C D
+**Sparring Partner:** Atvars Apinis
 
-**Project Summary in max 10 words:** E
+**Project Summary in max 10 words:** Pose detection used for a fun dancing game!
 
-**Project Title:** F
+**Project Title:** Dancing Game
 
 # Tips for Feedback Conversations
 
@@ -34,15 +34,23 @@
 
 ## Conversation 1 (Date: xx/xx/2024)
 
-Lecturer:
+Lecturer: Marie
 
 Questions for this conversation:
 
-- Question 1: V
+- Question 1: What do I do with the 'Milestone01: Data annotation' and 'Milestone02: Model is being trained' assignments if I use an already pre-trained pose estimation model?
+
+- Question 2: Where do I get started, what should I do first?
+
+- Question 3: I feel like my title is too simple. Should I change it to a more fun one or will it be too much?
 
 This is the feedback on my questions.
 
-- Feedback 1: G
+- Feedback 1: ?
+
+- Feedback 2: ?
+
+- Feedback 3: ?
 
 ## Conversation 2 (Date: xx/xx/2024)
 
