@@ -1,0 +1,16 @@
+[Unit]
+Description=ProjectOne Project
+After=network.target
+
+[Service]
+ExecStart=/home/user/<name_of_your_repo>/<venv>/bin/python -u /home/user/<name_of_your_repo>/RPi/app.py
+WorkingDirectory=/home/user/<name_of_your_repo>/RPi
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+User=user
+CPUSchedulingPolicy=rr
+CPUSchedulingPriority=99
+
+[Install]
+WantedBy=multi-user.target
