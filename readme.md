@@ -1,9 +1,9 @@
-# Project Title
+# Dancing Game
 
-**FIRST & LAST NAME:** A B
+**FIRST & LAST NAME:** Viola Nguyen
 
-**Sparring Partner:** C D
+**Sparring Partner:** Atvars Apinis
 
-**Project Summary in max 10 words:** E
+**Project Summary in max 10 words:** Pose detection used for a fun dancing game!
 
-**Project Title:** F
+**Project Title:** Dancing Game
