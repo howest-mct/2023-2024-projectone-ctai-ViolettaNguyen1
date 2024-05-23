@@ -1,6 +1,5 @@
 # AI Value Canvas
 ___
-
 ## 1. **Stakeholders**: 
 
 - ***Who participates***: Me, as the creator of the project; coaches as my mentors; users, who want to learn/copy a dance routine from a video.
