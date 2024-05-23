@@ -32,25 +32,24 @@
 
 # Feedforward Conversations
 
-## Conversation 1 (Date: xx/xx/2024)
+## Conversation 1 (Date: 23/05/2024)
 
-Lecturer: Marie
+Lecturer: Marie Dewitte
 
 Questions for this conversation:
 
-- Question 1: What do I do with the 'Milestone01: Data annotation' and 'Milestone02: Model is being trained' assignments if I use an already pre-trained pose estimation model?
+- Question 1: What is the expected workflow of my project and how do I get started if I have a pretrained model?
+> There are three pre-trained model I have in mind: https://www.tensorflow.org/hub/tutorials/movenet; https://chuoling.github.io/mediapipe/solutions/pose.html; https://docs.ultralytics.com/tasks/pose/. 
 
-- Question 2: Where do I get started, what should I do first?
+- Question 2: What do I do with the 'Milestone01: Data annotation' and 'Milestone02: Model is being trained' assignments if I use an already pre-trained pose estimation model?
 
 - Question 3: I feel like my title is too simple. Should I change it to a more fun one or will it be too much?
 
 This is the feedback on my questions.
 
-- Feedback 1: ?
+- Feedback 1&2: If using only one pretrained model, it will overfit to "wrong" videos too. This may get taken advantage of. The added value of the whole project is under question too if taking this route. A possible solution is to combine/retrain the three models. That way the milestones will be achieved as well. 
 
-- Feedback 2: ?
-
-- Feedback 3: ?
+- Feedback 3: Leave it as it is.
 
 ## Conversation 2 (Date: xx/xx/2024)
 
