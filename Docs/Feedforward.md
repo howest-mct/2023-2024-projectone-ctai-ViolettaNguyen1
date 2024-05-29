@@ -51,26 +51,38 @@ This is the feedback on my questions.
 
 - Feedback 3: Leave it as it is.
 
-## Conversation 2 (Date: xx/xx/2024)
+## Conversation 2 (Date: 29/05/2024)
 
-Lecturer:
-
-Questions for this conversation:
-
-- Question 1: V
-
-This is the feedback on my questions.
-
-- Feedback 1: G
-
-## Conversation 3 (Date: xx/xx/2024)
-
-Lecturer:
+Lecturer: Claudia Eeckhout
 
 Questions for this conversation:
 
-- [x] Question 1: V
+- Question 1: I have made some changes to my PD01 file because I am training the model on my own annotated data now. Do you approve thoe changes?
+
+- Question 2: What else should I change about my PD01? 
+
+- Question 3: What is the expected format of Gir Hub repository? Should I delete the mini project we did the first day from that repository?
 
 This is the feedback on my questions.
 
-- Feedback 1: G
+- Feedback 1:
+
+- Feedback 2:
+
+- Feedback 3:
+
+## Conversation 3 (Date: 29/05/2024)
+
+Lecturer: Marie Dewitte
+
+Questions for this conversation:
+
+- Question 1: I have some issues with my model. I have annotated 730 images (from 5 videos) by manually applying bounding box and key points skeleton. However, I understand that if I train the model on those images alone it will perform poorly due to overfitting. Also, all those videos included only a certain group of people (girls) and only in full height, so the model is not able to identify the person if even one of the limbs is not in the camera sight. 
+    I thought I would be able to solve this problem by combining my self-annotated data with a dataset(s) I have found on Kaggle and Roboflow Universe in Roboflow Workspace , but it was not the case. There was another two problems: the dataset I have downloaded was annotated slightly differently (left side was the right one and vice versa) and I have noticed it only after I was finished annotating the data. By playing with naming and the location of my own key points I was not able to solve the issue. 
+    Another problem I have encountered was that even though the Kaggle dataset was annotated correctly and key points were displayed correctly in the workspace itself, when I tried to generate the dataset, they got messed up: deleted key points during annotation were reappearing in the generated dataset. I tried reuploading and regenerating the Kaggle dataset couple of times, but it did not help. To show you what I mean I will add a picture. 
+    ![The problem of deleted keypoints](Screenshot_28-5-2024_10913_app.roboflow.com.jpeg)
+    I have also tried searching for other datasets in the Roboflow Universe, but when I downloaded them I  had the same issue with deleted key points reappearing. 
+
+This is the feedback on my questions.
+
+- Feedback 1:
