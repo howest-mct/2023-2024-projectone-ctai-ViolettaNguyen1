@@ -65,11 +65,9 @@ Questions for this conversation:
 
 This is the feedback on my questions.
 
-- Feedback 1:
+- Feedback 1&2: The changes are fine, but there is a need to correct the version of the document too, a those are some fundamental changes. I should check if my project outcomes are up to date, too.
 
-- Feedback 2:
-
-- Feedback 3:
+- Feedback 3: The mini-project we did the first day is the example of the format of the git repository that the teachers expect. I need to keep the files I need (like the bluetooth files etc), but rewrite the original code from the repository. More information about it will be announced tomorrow during the additional session about establishing connections that will be held by Pieter-Jan.
 
 ## Conversation 3 (Date: 29/05/2024)
 
