@@ -74,8 +74,9 @@ def capture_and_display(video_path, audio_path, window_name, webcam_index=0, web
             padding_side = round((1920 - frame_video.shape[1])/2)
             frame_video = cv2.copyMakeBorder(frame_video, 0, 0, padding_side, padding_side, cv2.BORDER_CONSTANT)
 
-        # results_video = model(frame_video)
-        # results_webcam = model(frame_webcam_resized)
+        results_video = model(frame_video)
+        results_webcam = model(frame_webcam_resized)
+        frame_video = results_video[0].plot()
 
 
         # Position the webcam frame in the bottom right corner
@@ -85,28 +86,57 @@ def capture_and_display(video_path, audio_path, window_name, webcam_index=0, web
         # Overlay the webcam frame on the main video frame
         # frame_video[y_offset:y_offset+webcam_height, x_offset:x_offset+webcam_width] = frame_webcam_resized
         # frame_video[y_offset:y_offset+webcam_height, x_offset:x_offset+webcam_width] = frame_webcam_resized
-        frame_video[y_offset:y_offset+webcam_height, x_offset:x_offset+webcam_width] = frame_webcam_resized
+        frame_video[y_offset:y_offset+webcam_height, x_offset:x_offset+webcam_width] = results_webcam[0].plot()
         
         # # Run YOLOv8 inference on the frame
-        results = model(frame_video)
+        #results = model(frame_video)
 
         # Visualize the results on the frame
-        frame_video = results[0].plot()
-        keypoints = results[0].keypoints
+        # frame_video = results[0].plot()
+        keypoints_video = results_video[0].keypoints
+        keypoints_webcam = results_webcam[0].keypoints
+        # boxes = results[0].boxes
         #print(keypoints)
-        if len(keypoints) == 2:
+        print(len(keypoints_webcam))
+        if (len(keypoints_webcam) >= 1) and (len(keypoints_video) >=1):
             #print(keypoints[0].xy, keypoints[1].xy)
             # person_one = normalize_keypoints(keypoints[0].xyn)
             # person_two = normalize_keypoints(keypoints[1].xyn)
             #print(cosine_similarity(keypoints[0].xy.reshape(17,2), keypoints[1].xy.reshape(17,2))[0][0])
             #print(cosine_similarity(keypoints[0].xy.reshape(1,-1), keypoints[1].xy.reshape(1,-1)))
-            #print(cosine_similarity(keypoints[1].xyn.reshape(1,-1), keypoints[0].xyn.reshape(1,-1)))
-            keypoint_distance = euclidean_distances(keypoints[0].xyn.reshape(1,-1), keypoints[1].xyn.reshape(1,-1), squared=True)
-            if keypoint_distance[0][0] >= 10.0:
-                score = 0
-            else:
-                score = 100 - round(keypoint_distance[0][0]*10)
-            print("Score:",score)
+            score = 1 - (cosine_similarity(keypoints_webcam[0].xy.reshape(1,-1), keypoints_video[0].xy.reshape(1,-1)))
+            # print(boxes[0].xywh[0]) # 
+            # width_box = boxes[0].xywh[0][2] # width of a box
+            # difference_x = []
+            # difference_y = []
+            # for i in range(0,17):
+            #     a = keypoints[0].xy[0][i][0]/boxes[0].xywh[0][0]
+            #     a1 = keypoints[1].xy[0][i][0]/boxes[1].xywh[0][0]
+            #     difference_x.append(abs(a-a1))
+            #     b = keypoints[0].xy[0][i][1]/boxes[0].xywh[0][1]
+            #     b1 = keypoints[1].xy[0][i][1]/boxes[1].xywh[0][1]
+            #     difference_y.append(abs(b-b1))
+
+            # #difference = np.matrix((difference_x,difference_y))
+            # difference_x = sum(difference_x)
+            # difference_y = sum(difference_y)
+            # # difference_y = np.mean(difference_y)
+                
+            # print(keypoints[0].xy[0][0][1])
+            # print(keypoints[0].xy)
+            #keypoint_distance = euclidean_distances(keypoints_video[0].xyn.reshape(1,-1), keypoints_webcam[0].xyn.reshape(1,-1), squared=True)
+            # if keypoint_distance[0][0] >= 10.0:
+            #     score = 0
+            # else:
+            #     score = 100 - round(keypoint_distance[0][0]*10)
+
+            #score = int(difference_x+difference_y)
+            # if score >= 10.0:
+            #     score = 0
+            # else:
+            
+            # score = (1 - cosine_similarity(keypoints[1].xyn[0].reshape(1,-1), keypoints[0].xyn[0].reshape(1,-1)))* 100
+            print("Score:",score*100)
         
 
         cv2.imshow(window_name, frame_video)

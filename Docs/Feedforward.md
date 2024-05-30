@@ -79,7 +79,7 @@ Questions for this conversation:
     I thought I would be able to solve this problem by combining my self-annotated data with a dataset(s) I have found on Kaggle and Roboflow Universe in Roboflow Workspace , but it was not the case. There was another two problems: the dataset I have downloaded was annotated slightly differently (left side was the right one and vice versa) and I have noticed it only after I was finished annotating the data. By playing with naming and the location of my own key points I was not able to solve the issue. 
     Another problem I have encountered was that even though the Kaggle dataset was annotated correctly and key points were displayed correctly in the workspace itself, when I tried to generate the dataset, they got messed up: deleted key points during annotation were reappearing in the generated dataset. I tried reuploading and regenerating the Kaggle dataset couple of times, but it did not help. To show you what I mean I will add a picture. 
     ![The problem of deleted keypoints](Screenshot_28-5-2024_10913_app.roboflow.com.jpeg)
-    I have also tried searching for other datasets in the Roboflow Universe, but when I downloaded them I  had the same issue with deleted key points reappearing. 
+    I have also tried searching for other datasets in the Roboflow Universe, but when I downloaded them I had the same issue with deleted key points reappearing. 
 
 This is the feedback on my questions.
 
