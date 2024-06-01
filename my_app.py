@@ -5,7 +5,10 @@ from ultralytics import YOLO
 from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances
 import numpy as np
 
-model = YOLO(r"C:\Users\viola\Documents\CTAI\1y\2s\Project 1\project_weeks\2023-2024-projectone-ctai-ViolettaNguyen1\runs\pose\train2\weights\best.pt")
+model = YOLO(r"C:\Users\viola\Documents\CTAI\1y\2s\Project 1\project_weeks\2023-2024-projectone-ctai-ViolettaNguyen1\runs\pose\train5\weights\best.pt")
+#model = YOLO(r"C:\Users\viola\Documents\CTAI\1y\2s\Project 1\project_weeks\2023-2024-projectone-ctai-ViolettaNguyen1\runs\pose\train4\weights\best.pt")
+#model = YOLO(r"C:\Users\viola\Documents\CTAI\1y\2s\Project 1\project_weeks\2023-2024-projectone-ctai-ViolettaNguyen1\runs\pose\train3\weights\best.pt")
+#model = YOLO(r"C:\Users\viola\Documents\CTAI\1y\2s\Project 1\project_weeks\2023-2024-projectone-ctai-ViolettaNguyen1\runs\pose\train2\weights\best.pt")
 #model = YOLO(r"C:\Users\viola\Documents\CTAI\1y\2s\Project 1\project_weeks\2023-2024-projectone-ctai-ViolettaNguyen1\runs\pose\train\weights\best.pt")
 #model = YOLO("C:/Users/viola/Documents/CTAI/1y/2s/Project 1/project_weeks/tests/first_test/runs/pose/train12/weights/best.pt")
 #model = YOLO("yolov8n-pose.pt")

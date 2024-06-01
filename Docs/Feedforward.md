@@ -83,4 +83,4 @@ Questions for this conversation:
 
 This is the feedback on my questions.
 
-- Feedback 1:
+- Feedback 1: It's more of a background issue that I have annotated it backwards. My problem is something to fix afterwards, there are tricks to mirroring the key points. Marie wants me to train the model as soon as possible. It's not an easy project to get perfect, she won't be disappointed if it doesn't work perfectly. The model is probably overfitting on your data. This afternoon, Marie will be busy with your problem.
