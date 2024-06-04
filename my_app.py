@@ -5,6 +5,8 @@ from ultralytics import YOLO
 from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances
 import numpy as np
 from pathlib import Path
+import os
+from datetime import datetime
 
 model = YOLO(r"C:\Users\viola\Documents\CTAI\1y\2s\Project 1\project_weeks\2023-2024-projectone-ctai-ViolettaNguyen1\runs\pose\train5\weights\best.pt")
 #model = YOLO(r"C:\Users\viola\Documents\CTAI\1y\2s\Project 1\project_weeks\2023-2024-projectone-ctai-ViolettaNguyen1\runs\pose\train4\weights\best.pt")
@@ -51,7 +53,7 @@ def capture_and_display(video_path, audio_path, window_name, webcam_index=0, web
 
         # Calculate the frame number corresponding to the audio time
         frame_number = int(audio_time * fps)
-        print("FPS:",fps, "Frame number:", frame_number)
+        print("FPS:",fps, "Frame number:", frame_number, "Audio time:", audio_time)
 
         # Set the video capture to the corresponding frame number
         cap_video.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
@@ -81,7 +83,7 @@ def capture_and_display(video_path, audio_path, window_name, webcam_index=0, web
             padding_side = (screen_width-width)/2      
             frame_video = cv2.resize(frame_video, (width, screen_height))
             padding_side = round((screen_width - frame_video.shape[1])/2)
-            frame_video = cv2.copyMakeBorder(frame_video, 0, 0, padding_side, padding_side, cv2.BORDER_CONSTANT)
+            frame_video = cv2.copyMakeBorder(frame_video, 0, 0, padding_side, padding_side, cv2.BORDER_CONSTANT) # Adding the padding for keepint the ratio of vertical videos
 
         # Getting the predictions from the model
         results_video = model(frame_video)
@@ -110,12 +112,15 @@ def capture_and_display(video_path, audio_path, window_name, webcam_index=0, web
 
             # Calculating the differences between normalized keypoints
             for i in range(34):
-                difference += abs(person_video[0][i]-person_webcam[0][i])
+                difference += (10*abs(person_video[0][i]-person_webcam[0][i]))**2*100
+            print(difference, difference/34)
             # Adding penalty for when most keypoints are not visible
             if person_webcam[np.nonzero(person_webcam)].size <= 14:
                 score = 0
             else:
-                score = 1000 - (difference/17*1000) # To make sure that the score is not unreasonable high, the difference is divided by 17 (as the number of keypoints themselves) and not 34
+                score = 1000 - (difference/34) # To make sure that the score is not unreasonable high, the difference is divided by 9 (as the number of paired keypoints and a nose) and not 34
+                if score < 0:
+                    score = 0
             performance_score.append(int(score))  
 
             # For debugging
@@ -170,17 +175,38 @@ def capture_and_display(video_path, audio_path, window_name, webcam_index=0, web
     cap_webcam.release()
     cv2.destroyAllWindows()
     final_score = int(sum(performance_score)/len(performance_score))
-    print("Final score:", final_score)
+    if final_score != 0:
+        write_to_file(final_score, video_path)
+
+def write_to_file(final_score: int, video_path: str): # Be careful about the name of the video
+    filepath = "./Files/performance_scores.csv"
+    file = open(filepath, "a+")
+    content = ""
+    if os.path.getsize(filepath) == 0:
+        content = "Score,ChoreographyName,DateTime\n"
+    time_to_write = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    # Some exception handling
+    try:
+        choreography_name = Path(video_path).name.encode("utf-8")
+    except Exception:
+        print("The program was unable to encode the name. Rename the file for proper displaying.")
+        choreography_name = "InvalidName"
+
+    content += f"{final_score},{str(choreography_name)[2:-1]},{time_to_write}\n"
+    file.write(content)
+    file.close()
 
 # Paths to video and audio files
 #video_path = r"C:\Users\viola\Documents\CTAI\1y\2s\Project 1\project_weeks\videos_to_test\KAYDAY X Y CLASS CHOREOGRAPHY VIDEO _ CODE KUNST - XI ft. Lee Hi.mp4"
-#video_path = r"C:\Users\viola\Documents\CTAI\1y\2s\Project 1\project_weeks\videos_to_test\Watch the OG choreographer slaying KAI's epic Mmmh dance moves!🤩🤩 .mp4"
+video_path = r"C:\Users\viola\Documents\CTAI\1y\2s\Project 1\project_weeks\videos_to_test\Watch the OG choreographer slaying KAI's epic Mmmh dance moves!🤩🤩 .mp4"
 #video_path = r"C:\Users\viola\Documents\CTAI\1y\2s\Project 1\project_weeks\videos_to_test\KISS OF LIFE (키스오브라이프) - 'Nobody Knows' Dance cover  _ 커버댄스  _ 3인안무 .mp4"
 #video_path = r"C:\Users\viola\Documents\CTAI\1y\2s\Project 1\project_weeks\videos_to_test\Ariana grande - Positions Choreography (choreo by 1million tina boo).mp4"
-video_path = r"C:\Users\viola\Documents\CTAI\1y\2s\Project 1\project_weeks\videos_to_test\ROSALÍA - MALAMENTE _ Tina Boo Choreography.mp4"
+#video_path = r"C:\Users\viola\Documents\CTAI\1y\2s\Project 1\project_weeks\videos_to_test\ROSALÍA - MALAMENTE _ Tina Boo Choreography.mp4"
 #video_path = "C:/Users/viola/Documents/CTAI/1y/2s/Project 1/project_weeks/videos_to_test/😎✨ .mp4"
 #video_path = "C:/Users/viola/Documents/CTAI/1y/2s/Project 1/project_weeks/videos_to_test/Doja Cat - Need to Know _ Redy Choreography.mp4"
 #video_path = r"C:\Users\viola\Documents\CTAI\1y\2s\Project 1\project_weeks\videos_to_test\I don't think anyone can copy her movements🔥😅 .mp4"
 
 # Capture and display video from file and webcam
 capture_and_display(video_path, extract_audio(video_path), 'Combined Video', webcam_index=0, webcam_height=400, webcam_width=712)
+
