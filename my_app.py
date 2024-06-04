@@ -29,26 +29,25 @@ def capture_and_display(video_path, audio_path, window_name, webcam_index=0, web
     cap_video = cv2.VideoCapture(video_path)
     cap_webcam = cv2.VideoCapture(webcam_index)
 
-    # Get the dimensions of the main video
-    ret, frame = cap_video.read()
-    if not ret:
-        print("Error: Unable to read the video file.")
-        return
-    
+    # Set the screen width and height
     screen_width = 1920
     screen_height = 1080
 
     # Get the frame rate of the main video
     fps = cap_video.get(cv2.CAP_PROP_FPS)
 
+    # Make the application run in a full window, full-screen mode
     cv2.namedWindow(window_name, cv2.WND_PROP_FULLSCREEN)
     cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
-    performance_score = []
 
+    # Playing the audio
     pygame.mixer.init()
     pygame.mixer.music.load(audio_path)
     pygame.mixer.music.play()
     
+    # Creating a list for calculating the average performance score
+    performance_score = []
+
     while cap_video.isOpened() and cap_webcam.isOpened():
         # Get the current time of the audio playback
         audio_time = pygame.mixer.music.get_pos() / 1000.0  # Convert milliseconds to seconds
@@ -60,6 +59,7 @@ def capture_and_display(video_path, audio_path, window_name, webcam_index=0, web
         # Set the video capture to the corresponding frame number
         cap_video.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
 
+        # Read the frames
         ret_video, frame_video = cap_video.read()
         ret_webcam, frame_webcam = cap_webcam.read()
 
@@ -70,11 +70,14 @@ def capture_and_display(video_path, audio_path, window_name, webcam_index=0, web
 
         # Mirroring the webcam feed 
         frame_webcam = cv2.flip(frame_webcam, 1)
-        # Resize the webcam frame
+
+        # Resizing the webcam frame
         frame_webcam_resized = resize_frame(frame_webcam, (webcam_width, webcam_height))
-        # ADDITION: resize video
+
+        # Resizing the video to display properly on full screen
         if (frame_video.shape[1]> frame_video.shape[0]):
             frame_video = resize_frame(frame_video, (1920,1080))
+        # For vertical videos:
         else:
             magnifier_ratio = 1080 / int(frame_video.shape[0])
             width = round(magnifier_ratio* int(frame_video.shape[1]))
@@ -83,6 +86,7 @@ def capture_and_display(video_path, audio_path, window_name, webcam_index=0, web
             padding_side = round((1920 - frame_video.shape[1])/2)
             frame_video = cv2.copyMakeBorder(frame_video, 0, 0, padding_side, padding_side, cv2.BORDER_CONSTANT)
 
+        # Getting the predictions from the model
         results_video = model(frame_video)
         results_webcam = model(frame_webcam_resized)
         frame_video = results_video[0].plot()
@@ -91,34 +95,34 @@ def capture_and_display(video_path, audio_path, window_name, webcam_index=0, web
         x_offset = screen_width - webcam_width
         y_offset = screen_height - webcam_height
 
-        # Overlay the webcam frame on the main video frame
-        # frame_video[y_offset:y_offset+webcam_height, x_offset:x_offset+webcam_width] = frame_webcam_resized
-        # frame_video[y_offset:y_offset+webcam_height, x_offset:x_offset+webcam_width] = frame_webcam_resized
+        # Overlay the webcam frame on the main video frame and display the window
         frame_video[y_offset:y_offset+webcam_height, x_offset:x_offset+webcam_width] = results_webcam[0].plot()
         cv2.imshow(window_name, frame_video)
 
+        # Computing the similarity score:
+        # Getting the keypoints
         keypoints_video = results_video[0].keypoints
         keypoints_webcam = results_webcam[0].keypoints
-        # boxes = results[0].boxes
-        #print(keypoints)
-        array_webcam = keypoints_webcam.xy.cpu().numpy()
-        array_video = keypoints_video.xy.cpu().numpy()
-        
-        if (array_webcam.size != 0) and (array_video.size != 0):
-            print(keypoints_video[0].xyn.reshape(1,-1))
-            print(keypoints_webcam[0].xyn.reshape(1,-1))
+
+        if (keypoints_webcam.xy.cpu().numpy().size != 0) and (keypoints_video.xy.cpu().numpy().size != 0):
+            # Reshaping the arrays
             person_webcam = keypoints_webcam[0].xyn.reshape(1,-1).cpu().numpy()
             person_video = keypoints_video[0].xyn.reshape(1,-1).cpu().numpy()
+
             difference = 0
+
+            # Calculating the differences between normalized keypoints
             for i in range(34):
                 difference += abs(person_video[0][i]-person_webcam[0][i])
-            print(difference)
-            print(person_webcam[np.nonzero(person_webcam)].size)
+            # Adding penalty for when most keypoints are not visible
             if person_webcam[np.nonzero(person_webcam)].size <= 14:
                 score = 0
             else:
-                score = 1000 - (difference/17*1000)
-            print("Score",score)
+                score = 1000 - (difference/17*1000) # To make sure that the score is not unreasonable high, the difference is divided by 17 (as the number of keypoints themselves) and not 34
+            performance_score.append(int(score))  
+
+            # For debugging
+            print("Score:", score) 
 
             #print(keypoints[0].xy, keypoints[1].xy)
             # person_one = normalize_keypoints(keypoints[0].xyn)
@@ -160,17 +164,16 @@ def capture_and_display(video_path, audio_path, window_name, webcam_index=0, web
             
             # score = (1 - cosine_similarity(keypoints[1].xyn[0].reshape(1,-1), keypoints[0].xyn[0].reshape(1,-1)))* 100
             # print(np.where(array_webcam == 0,-1, array_webcam)) 
-                 
-            performance_score.append(int(score))   
 
         if cv2.waitKey(int(fps)) & 0xFF == ord('q'):
             break
 
-    # Release resources
+    # Releasing resources
     cap_video.release()
     cap_webcam.release()
     cv2.destroyAllWindows()
-    print("Final score:", (sum(performance_score)/len(performance_score)))
+    final_score = sum(performance_score)/len(performance_score)
+    print("Final score:", final_score)
 
 # Paths to video and audio files
 #video_path = r"C:\Users\viola\Documents\CTAI\1y\2s\Project 1\project_weeks\videos_to_test\KAYDAY X Y CLASS CHOREOGRAPHY VIDEO _ CODE KUNST - XI ft. Lee Hi.mp4"
