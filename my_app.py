@@ -21,10 +21,7 @@ def extract_audio(video_path, audio_path="C:/Users/viola/Documents/CTAI/1y/2s/Pr
         clip.audio.write_audiofile(filename = filename, fps = 48000)        
     return filename
 
-def resize_frame(frame, dimensions):
-    return cv2.resize(frame, dimensions, interpolation=cv2.INTER_AREA)
-
-def capture_and_display(video_path, audio_path, window_name, webcam_index=0, webcam_width=320, webcam_height=240):
+def capture_and_display(video_path, audio_path, window_name, webcam_index=0, webcam_width=620, webcam_height=480):
     # Initialize Pygame for audio playback
     cap_video = cv2.VideoCapture(video_path)
     cap_webcam = cv2.VideoCapture(webcam_index)
@@ -54,7 +51,7 @@ def capture_and_display(video_path, audio_path, window_name, webcam_index=0, web
 
         # Calculate the frame number corresponding to the audio time
         frame_number = int(audio_time * fps)
-        print(fps, frame_number)
+        print("FPS:",fps, "Frame number:", frame_number)
 
         # Set the video capture to the corresponding frame number
         cap_video.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
@@ -72,23 +69,23 @@ def capture_and_display(video_path, audio_path, window_name, webcam_index=0, web
         frame_webcam = cv2.flip(frame_webcam, 1)
 
         # Resizing the webcam frame
-        frame_webcam_resized = resize_frame(frame_webcam, (webcam_width, webcam_height))
+        frame_webcam = cv2.resize(frame_webcam, (webcam_width, webcam_height))
 
         # Resizing the video to display properly on full screen
         if (frame_video.shape[1]> frame_video.shape[0]):
-            frame_video = resize_frame(frame_video, (1920,1080))
+            frame_video = cv2.resize(frame_video, (screen_width, screen_height))
         # For vertical videos:
         else:
-            magnifier_ratio = 1080 / int(frame_video.shape[0])
+            magnifier_ratio = screen_height / int(frame_video.shape[0])
             width = round(magnifier_ratio* int(frame_video.shape[1]))
-            padding_side = (1920-width)/2      
-            frame_video = resize_frame(frame_video, (width, 1080))
-            padding_side = round((1920 - frame_video.shape[1])/2)
+            padding_side = (screen_width-width)/2      
+            frame_video = cv2.resize(frame_video, (width, screen_height))
+            padding_side = round((screen_width - frame_video.shape[1])/2)
             frame_video = cv2.copyMakeBorder(frame_video, 0, 0, padding_side, padding_side, cv2.BORDER_CONSTANT)
 
         # Getting the predictions from the model
         results_video = model(frame_video)
-        results_webcam = model(frame_webcam_resized)
+        results_webcam = model(frame_webcam)
         frame_video = results_video[0].plot()
 
         # Position the webcam frame in the bottom right corner
@@ -96,7 +93,7 @@ def capture_and_display(video_path, audio_path, window_name, webcam_index=0, web
         y_offset = screen_height - webcam_height
 
         # Overlay the webcam frame on the main video frame and display the window
-        frame_video[y_offset:y_offset+webcam_height, x_offset:x_offset+webcam_width] = results_webcam[0].plot()
+        frame_video[y_offset:(y_offset+webcam_height), x_offset:(x_offset+webcam_width)] = results_webcam[0].plot()
         cv2.imshow(window_name, frame_video)
 
         # Computing the similarity score:
@@ -122,7 +119,7 @@ def capture_and_display(video_path, audio_path, window_name, webcam_index=0, web
             performance_score.append(int(score))  
 
             # For debugging
-            print("Score:", score) 
+            print("Score:", int(score)) 
 
             #print(keypoints[0].xy, keypoints[1].xy)
             # person_one = normalize_keypoints(keypoints[0].xyn)
@@ -172,7 +169,7 @@ def capture_and_display(video_path, audio_path, window_name, webcam_index=0, web
     cap_video.release()
     cap_webcam.release()
     cv2.destroyAllWindows()
-    final_score = sum(performance_score)/len(performance_score)
+    final_score = int(sum(performance_score)/len(performance_score))
     print("Final score:", final_score)
 
 # Paths to video and audio files
@@ -180,10 +177,10 @@ def capture_and_display(video_path, audio_path, window_name, webcam_index=0, web
 #video_path = r"C:\Users\viola\Documents\CTAI\1y\2s\Project 1\project_weeks\videos_to_test\Watch the OG choreographer slaying KAI's epic Mmmh dance moves!🤩🤩 .mp4"
 #video_path = r"C:\Users\viola\Documents\CTAI\1y\2s\Project 1\project_weeks\videos_to_test\KISS OF LIFE (키스오브라이프) - 'Nobody Knows' Dance cover  _ 커버댄스  _ 3인안무 .mp4"
 #video_path = r"C:\Users\viola\Documents\CTAI\1y\2s\Project 1\project_weeks\videos_to_test\Ariana grande - Positions Choreography (choreo by 1million tina boo).mp4"
-#video_path = r"C:\Users\viola\Documents\CTAI\1y\2s\Project 1\project_weeks\videos_to_test\ROSALÍA - MALAMENTE _ Tina Boo Choreography.mp4"
+video_path = r"C:\Users\viola\Documents\CTAI\1y\2s\Project 1\project_weeks\videos_to_test\ROSALÍA - MALAMENTE _ Tina Boo Choreography.mp4"
 #video_path = "C:/Users/viola/Documents/CTAI/1y/2s/Project 1/project_weeks/videos_to_test/😎✨ .mp4"
-video_path = "C:/Users/viola/Documents/CTAI/1y/2s/Project 1/project_weeks/videos_to_test/Doja Cat - Need to Know _ Redy Choreography.mp4"
+#video_path = "C:/Users/viola/Documents/CTAI/1y/2s/Project 1/project_weeks/videos_to_test/Doja Cat - Need to Know _ Redy Choreography.mp4"
 #video_path = r"C:\Users\viola\Documents\CTAI\1y\2s\Project 1\project_weeks\videos_to_test\I don't think anyone can copy her movements🔥😅 .mp4"
 
 # Capture and display video from file and webcam
-capture_and_display(video_path, extract_audio(video_path), 'Combined Video', webcam_index=0, webcam_width=620, webcam_height=480)
+capture_and_display(video_path, extract_audio(video_path), 'Combined Video', webcam_index=0, webcam_height=400, webcam_width=712)
