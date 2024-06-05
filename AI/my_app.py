@@ -9,30 +9,25 @@ import os
 from datetime import datetime
 import time
 import threading
-from queue import Queue
-from BLE_client import run
+import socket
+import sys
+
+server_address = ('192.168.168.167', 8500)  # Connect to RPi (or other server) on ip ... and port ... (the port is set in server.py)
+# the ip address can also be the WiFi ip of your RPi, but this can change. You can print your WiFi IP on your LCD? (if needed)
+
+# Global vars for use in methods/threads
+client_socket = None
+receive_thread = None
+shutdown_flag = threading.Event() # see: https://docs.python.org/3/library/threading.html#event-objects
 
 model = YOLO(r".\AI\runs\pose\train5\weights\best.pt")
-#model = YOLO(r"C:\Users\viola\Documents\CTAI\1y\2s\Project 1\project_weeks\2023-2024-projectone-ctai-ViolettaNguyen1\runs\pose\train4\weights\best.pt")
-#model = YOLO(r"C:\Users\viola\Documents\CTAI\1y\2s\Project 1\project_weeks\2023-2024-projectone-ctai-ViolettaNguyen1\runs\pose\train3\weights\best.pt")
-#model = YOLO(r"C:\Users\viola\Documents\CTAI\1y\2s\Project 1\project_weeks\2023-2024-projectone-ctai-ViolettaNguyen1\runs\pose\train2\weights\best.pt")
-#model = YOLO(r"C:\Users\viola\Documents\CTAI\1y\2s\Project 1\project_weeks\2023-2024-projectone-ctai-ViolettaNguyen1\runs\pose\train\weights\best.pt")
-#model = YOLO("C:/Users/viola/Documents/CTAI/1y/2s/Project 1/project_weeks/tests/first_test/runs/pose/train12/weights/best.pt")
 #model = YOLO("yolov8n-pose.pt")
 
-# Creating two Queues for communication between threads.
-tx_q = Queue()
-rx_q = Queue()
-
-targetDeviceName=None
-targetDeviceMac="D8:3A:DD:D9:6E:8E"
-
-def init_ble_thread():
-    # Creating a new thread for running a function 'run' with specified arguments.
-    ble_client_thread = threading.Thread(target=run, args=(
-        rx_q, tx_q, targetDeviceName, targetDeviceMac), daemon=True)
-    # Starting the thread execution.
-    ble_client_thread.start()
+def setup_socket_client():
+    global client_socket, receive_thread
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # create a socket instance
+    client_socket.connect(server_address) # connect to specified server
+    print("Connected to server")
 
 def extract_audio(video_path, audio_path="./Files/Audio/"):
     filename = f"{audio_path}{Path(video_path).name}.mp3"
@@ -62,11 +57,11 @@ def capture_and_display(video_path, audio_path, window_name, webcam_index=0, web
     pygame.mixer.music.load(audio_path)
     pygame.mixer.music.play()
     
-    # Creating a list for calculating the average performance score
+    # Creating a list for calculating the average performance score and a counter so that i do not calculate the similarity score too often
     performance_score = []
+    i = 0
 
     while cap_video.isOpened() and cap_webcam.isOpened():
-        start = time.time()
         # Get the current time of the audio playback
         audio_time = pygame.mixer.music.get_pos() / 1000.0  # Convert milliseconds to seconds
 
@@ -117,40 +112,37 @@ def capture_and_display(video_path, audio_path, window_name, webcam_index=0, web
         frame_video[y_offset:(y_offset+webcam_height), x_offset:(x_offset+webcam_width)] = results_webcam[0].plot()
         cv2.imshow(window_name, frame_video)
 
-        # Computing the similarity score:
-        # Getting the keypoints
-        keypoints_video = results_video[0].keypoints
-        keypoints_webcam = results_webcam[0].keypoints
+        if i%9 == 0: # Send some data every 13 iterations            
+            # Computing the similarity score:
+            # Getting the keypoints
+            keypoints_video = results_video[0].keypoints
+            keypoints_webcam = results_webcam[0].keypoints
 
-        if (keypoints_webcam.xy.cpu().numpy().size != 0) and (keypoints_video.xy.cpu().numpy().size != 0):
-            # Reshaping the arrays
-            person_webcam = keypoints_webcam[0].xyn.reshape(1,-1).cpu().numpy()
-            person_video = keypoints_video[0].xyn.reshape(1,-1).cpu().numpy()
+            if (keypoints_webcam.xy.cpu().numpy().size != 0) and (keypoints_video.xy.cpu().numpy().size != 0):
+                # Reshaping the arrays
+                person_webcam = keypoints_webcam[0].xyn.reshape(1,-1).cpu().numpy()
+                person_video = keypoints_video[0].xyn.reshape(1,-1).cpu().numpy()
 
-            difference = 0
+                difference = 0
 
-            # Calculating the differences between normalized keypoints
-            for i in range(34):
-                difference += (10*abs(person_video[0][i]-person_webcam[0][i]))**2*100
-            print(difference, difference/34)
-            # Adding penalty for when most keypoints are not visible
-            if person_webcam[np.nonzero(person_webcam)].size <= 14:
-                score = 0
-            else:
-                score = 1000 - (difference/34) # To make sure that the score is not unreasonable high, the difference is divided by 9 (as the number of paired keypoints and a nose) and not 34
-                if score < 0:
+                # Calculating the differences between normalized keypoints
+                for i in range(34):
+                    difference += (10*abs(person_video[0][i]-person_webcam[0][i]))**2*100
+                print(difference, difference/34)
+                # Adding penalty for when most keypoints are not visible
+                if person_webcam[np.nonzero(person_webcam)].size <= 14:
                     score = 0
-            performance_score.append(int(score))  
-            tx_q.put(int(score))
-
-        # For debugging
+                else:
+                    score = 1000 - (difference/34) # To make sure that the score is not unreasonable high, the difference is divided by 9 (as the number of paired keypoints and a nose) and not 34
+                    if score < 0:
+                        score = 0
+                performance_score.append(int(score))  
+            else: 
+                score = 0
+            client_socket.sendall(str(round(score)).encode())
             print("Score:", int(score))
 
-        end = time.time()
-        duration_processing = end-start
-        print(duration_processing)
-        print(duration_processing*fps)
-
+        i += 1
         if cv2.waitKey(int(fps)) & 0xFF == ord('q'):
             break
 
@@ -185,8 +177,20 @@ def write_to_file(final_score: int, video_path: str): # Be careful about the nam
 #video_path = r".\Files\Dance_routines\Doja Cat - So high (Dance Cover) _ Clarkie Capillo.mp4"
 video_path = r".\Files\Dance_routines\Doja Cat - Woman _ Gyuri Choreography Beginner Class.mp4"
 
+def main():
+    global client_socket, receive_thread
+    setup_socket_client()
 
-init_ble_thread()
-# Capture and display video from file and webcam
-capture_and_display(video_path, extract_audio(video_path), 'Combined Video', webcam_index=0, webcam_height=400, webcam_width=712)
+    try:
+        capture_and_display(video_path, extract_audio(video_path), 'Combined Video', webcam_index=0, webcam_height=400, webcam_width=712)
+    except KeyboardInterrupt:
+        print("Client disconnecting...")
+        shutdown_flag.set()
+    finally:
+        client_socket.close()
+        print("Client stopped gracefully")
+
+if __name__ == "__main__":
+    main()
+
 
