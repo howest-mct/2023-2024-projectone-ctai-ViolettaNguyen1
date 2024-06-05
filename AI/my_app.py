@@ -100,8 +100,8 @@ def capture_and_display(video_path, audio_path, window_name, webcam_index=0, web
             frame_video = cv2.copyMakeBorder(frame_video, 0, 0, padding_side, padding_side, cv2.BORDER_CONSTANT) # Adding the padding for keepint the ratio of vertical videos
 
         # Getting the predictions from the model
-        results_video = model(frame_video)
         results_webcam = model(frame_webcam)
+        results_video = model(frame_video)
         frame_video = results_video[0].plot()
 
         # Position the webcam frame in the bottom right corner
@@ -112,7 +112,7 @@ def capture_and_display(video_path, audio_path, window_name, webcam_index=0, web
         frame_video[y_offset:(y_offset+webcam_height), x_offset:(x_offset+webcam_width)] = results_webcam[0].plot()
         cv2.imshow(window_name, frame_video)
 
-        if i%9 == 0: # Send some data every 13 iterations            
+        if i%12 == 0: # Send some data every 13 iterations            
             # Computing the similarity score:
             # Getting the keypoints
             keypoints_video = results_video[0].keypoints
@@ -174,8 +174,9 @@ def write_to_file(final_score: int, video_path: str): # Be careful about the nam
     file.close()
 
 # Paths to video and audio files
-#video_path = r".\Files\Dance_routines\Doja Cat - So high (Dance Cover) _ Clarkie Capillo.mp4"
-video_path = r".\Files\Dance_routines\Doja Cat - Woman _ Gyuri Choreography Beginner Class.mp4"
+video_path = r".\Files\Dance_routines\7 rings - Ariana Grande _ Beginner's class.mp4"
+video_path = r".\Files\Dance_routines\Doja Cat - So high (Dance Cover) _ Clarkie Capillo.mp4"
+#video_path = r".\Files\Dance_routines\Doja Cat - Woman _ Gyuri Choreography Beginner Class.mp4"
 
 def main():
     global client_socket, receive_thread
