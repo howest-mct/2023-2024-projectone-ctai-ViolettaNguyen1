@@ -56,6 +56,7 @@ def handle_client(sock, shutdown_flag):
     except Exception as e:
         print(f"Error: {e}")
     finally:
+        lcd.clear()
         sock.close()
 
 
