@@ -23,11 +23,11 @@ def main():
         try:
             incoming = rx_q.get() # Wait for up to 1 second 
             if i == 0:
-                lcd_device.display_message(f"Number of drones")
+                lcd_device.display_message(f"Score:")
                 i = 1
 
             if incoming!=prev_incoming:
-                print("Number of drones: {}".format(incoming))
+                print("Score: {}".format(incoming))
                 lcd_device.display_message(incoming, lcd_device.LCD_LINE_2)
                 time.sleep(0.2)
                 prev_incoming = incoming
