@@ -36,7 +36,7 @@ def extract_audio(video_path, audio_path="./Files/Audio/"):
         clip.audio.write_audiofile(filename = filename, fps = 48000)        
     return filename
 
-def capture_and_display(video_path, audio_path, window_name, webcam_index=0, webcam_width=620, webcam_height=480):
+def capture_and_display(video_path, audio_path, window_name, webcam_index=0, webcam_width=712, webcam_height=400):
     try:
         # Initialize Pygame for audio playback
         cap_video = cv2.VideoCapture(video_path)
@@ -66,6 +66,8 @@ def capture_and_display(video_path, audio_path, window_name, webcam_index=0, web
             start = time.time()
             # Get the current time of the audio playback
             audio_time = pygame.mixer.music.get_pos() / 1000.0  # Convert milliseconds to seconds
+            if audio_time < 0:
+                break
 
             # Calculate the frame number corresponding to the audio time
             frame_number = int(audio_time * fps)
@@ -122,8 +124,8 @@ def capture_and_display(video_path, audio_path, window_name, webcam_index=0, web
 
                 if (keypoints_webcam.xy.cpu().numpy().size != 0) and (keypoints_video.xy.cpu().numpy().size != 0):
                     # Reshaping the arrays
-                    person_webcam = keypoints_webcam[round(keypoints_webcam.data.shape[0]/2)].xyn.reshape(1,-1).cpu().numpy()
-                    person_video = keypoints_video[round(keypoints_video.data.shape[0]/2)].xyn.reshape(1,-1).cpu().numpy()
+                    person_webcam = keypoints_webcam[round(keypoints_webcam.data.shape[0]/2)-1].xyn.reshape(1,-1).cpu().numpy()
+                    person_video = keypoints_video[round(keypoints_video.data.shape[0]/2)-1].xyn.reshape(1,-1).cpu().numpy()
 
                     difference = 0
 
@@ -146,10 +148,9 @@ def capture_and_display(video_path, audio_path, window_name, webcam_index=0, web
             i += 1
             end = time.time()
             print(end-start)
+
             if cv2.waitKey(int(fps)) & 0xFF == ord('q'):
                 pygame.mixer.music.stop()
-                break
-            elif audio_time < 0:
                 break
             
 
@@ -158,9 +159,13 @@ def capture_and_display(video_path, audio_path, window_name, webcam_index=0, web
         cap_video.release()
         cap_webcam.release()
         cv2.destroyAllWindows()
-        final_score = int(sum(performance_score)/len(performance_score))
-        if final_score != 0:
-            write_to_file(final_score, video_path)
+        if len(performance_score) != 0:
+            final_score = int(sum(performance_score)/len(performance_score))
+            if final_score != 0:
+                write_to_file(final_score, video_path)
+        else:
+            final_score = 0
+        client_socket.sendall(str(final_score).encode())
 
 def write_to_file(final_score: int, video_path: str): # Be careful about the name of the video
     filepath = "./Files/performance_scores.csv"
@@ -181,6 +186,16 @@ def write_to_file(final_score: int, video_path: str): # Be careful about the nam
     file.write(content)
     file.close()
 
+def navigation():
+    print("1. Play")
+    print("2. Scoreboard")
+    print("3. Quit\n")
+    user_input = int(input("\nEnter the option number [1/2/3]:>"))
+    if user_input in range(1,4):
+        return user_input
+    else:
+        raise ValueError("\nThere is no such option... Try again!")
+
 def menu():
     dir_list = os.listdir("./Files/Dance_routines/")
     for i in range(len(dir_list)):
@@ -195,26 +210,37 @@ def main():
     global client_socket, receive_thread
     setup_socket_client()
     try:
-        print("Welcome to the dancing game!\n")
+        print("\n Welcome to the dancing game!")
         while True:
             try:
-                choreography_name = menu()
-            except ValueError:
-                pass # the loop continues
-
-            video_path = f"./Files/Dance_routines/{choreography_name}"
-            capture_and_display(video_path, extract_audio(video_path), 'Combined Video', webcam_index=0, webcam_height=400, webcam_width=712)
-            user_input = input("\nPress Y if you want to play more:>")
-            if user_input.lower() != "y":
-                print("\nExiting the application... Bye!")
-                break
-
+                option = navigation()
+                if option == 1:
+                    try:
+                        choreography_name = menu()
+                    except ValueError as ex:
+                        print(ex)
+                        pass # the loop continues
+                    
+                    print("TIP: If you want to stop playing the video at any given time, press [q].")
+                    video_path = f"./Files/Dance_routines/{choreography_name}"
+                    capture_and_display(video_path, extract_audio(video_path), 'Combined Video', webcam_index=0)
+                    print("\nYour final score is displayed on the LCD!")
+                    user_input = input("\nPress Y if you want to play more:>")
+                    if user_input.lower() != "y":
+                        break
+                elif option == 2:
+                    pass
+                elif option == 3:
+                    break
+            except ValueError as ex:
+                print(ex)
+                pass
     except KeyboardInterrupt:
-        print("\nClient disconnecting...")
+        print("\nDisconnecting...")
         shutdown_flag.set()
     finally:
         client_socket.close()
-        print("Client stopped gracefully")
+        print("\nExiting the application... Bye!")
 
 if __name__ == "__main__":
     main()
