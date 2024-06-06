@@ -87,4 +87,18 @@ This is the feedback on my questions.
 
 ## Conversation 4 (Date: 04/06/2024) => Tour moment
 
+Lecturers: Dieter Roobrouck, Frederik Waeyaert and Marie Dewitte 
+
 - Feedback: It is better to work with low-speed choreographies and to tape down the place where to dance as the model may have problems with identifying keypoints that are too close/ too far from the webcam. 
+
+## Conversation 5 (Date: 05/06/2024)
+
+Lecturer: Tijn Veraghtert
+
+Questions for this conversation:
+
+- Question 1: How should I make the legs for the box?
+
+This is the feedback on my questions.
+
+- Feedback 1: If using wood: cut holes in the buttom, put the wooden stick through and either glue or nail down the end. Other way to approach the maker skills part is to change the wood planks to plastic planks: there is a shortage of thin wood at the IDC shop, and also if I make my current sketch from plastic, I would not need to search for another way to make legs more stable. It is possible to use the lasercutter for thin plastic that is available at the IDC shop. Brecht and Halles (people from the IDC shop) can help me with lasercutting, but it is better to go there with a bigger group of people so that they do not need to explain the same stuff over and over again for different people. During the lunch break, the shop is either closed or hosted by students: better not to go there then.
