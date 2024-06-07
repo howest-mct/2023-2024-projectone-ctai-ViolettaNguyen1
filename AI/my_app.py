@@ -36,7 +36,57 @@ def extract_audio(video_path, audio_path="./Files/Audio/"):
         clip.audio.write_audiofile(filename = filename, fps = 48000)        
     return filename
 
-def capture_and_display(video_path, audio_path, window_name, webcam_index=0, webcam_width=712, webcam_height=400):
+def preprocesss_video(video_path):
+    try:
+        # Specifications of the desired video output
+        filename = Path(video_path).name
+        output_file = f'./Files/Preprocessed_videos/{filename}'
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        frame_rate = 30
+
+        screen_width = 1920
+        screen_height = 1080
+
+        # Creating a csv-file to save the keypoints to reuse them if needed
+        filepath = f'./Files/Preprocessed_videos/{filename}.csv'
+        file = open(filepath, "w")
+
+        # Creating the VideoWriter object
+        out = cv2.VideoWriter(output_file, fourcc, frame_rate, (screen_width, screen_height))
+
+        cap_video = cv2.VideoCapture(video_path)
+        
+        while cap_video.isOpened():
+            ret_video, frame_video = cap_video.read()
+
+            if not ret_video:
+                break
+
+            # Resizing the video to display properly on full screen
+            if (frame_video.shape[1]> frame_video.shape[0]):
+                frame_video = cv2.resize(frame_video, (screen_width, screen_height))
+            # For vertical videos:
+            else:
+                magnifier_ratio = screen_height / int(frame_video.shape[0])
+                width = round(magnifier_ratio* int(frame_video.shape[1]))
+                padding_side = (screen_width-width)/2      
+                frame_video = cv2.resize(frame_video, (width, screen_height))
+                padding_side = round((screen_width - frame_video.shape[1])/2)
+                frame_video = cv2.copyMakeBorder(frame_video, 0, 0, padding_side, padding_side, cv2.BORDER_CONSTANT) # Adding the padding for keepint the ratio of vertical videos
+            
+            results_video = model.predict(frame_video, verbose = False)
+
+            frame_video = results_video[0].plot()
+            out.write(frame_video)
+            file.write(f"{results_video[0].keypoints}\n")
+        return output_file, filepath
+    
+    finally:
+        file.close()
+        out.release()
+        cap_video.release()
+
+def capture_and_display(video_path, audio_path, keypoints_csv, window_name, webcam_index=0, webcam_width=712, webcam_height=400):
     try:
         # Initialize Pygame for audio playback
         cap_video = cv2.VideoCapture(video_path)
@@ -91,22 +141,22 @@ def capture_and_display(video_path, audio_path, window_name, webcam_index=0, web
             # Resizing the webcam frame
             frame_webcam = cv2.resize(frame_webcam, (webcam_width, webcam_height))
 
-            # Resizing the video to display properly on full screen
-            if (frame_video.shape[1]> frame_video.shape[0]):
-                frame_video = cv2.resize(frame_video, (screen_width, screen_height))
-            # For vertical videos:
-            else:
-                magnifier_ratio = screen_height / int(frame_video.shape[0])
-                width = round(magnifier_ratio* int(frame_video.shape[1]))
-                padding_side = (screen_width-width)/2      
-                frame_video = cv2.resize(frame_video, (width, screen_height))
-                padding_side = round((screen_width - frame_video.shape[1])/2)
-                frame_video = cv2.copyMakeBorder(frame_video, 0, 0, padding_side, padding_side, cv2.BORDER_CONSTANT) # Adding the padding for keepint the ratio of vertical videos
+            # # Resizing the video to display properly on full screen
+            # if (frame_video.shape[1]> frame_video.shape[0]):
+            #     frame_video = cv2.resize(frame_video, (screen_width, screen_height))
+            # # For vertical videos:
+            # else:
+            #     magnifier_ratio = screen_height / int(frame_video.shape[0])
+            #     width = round(magnifier_ratio* int(frame_video.shape[1]))
+            #     padding_side = (screen_width-width)/2      
+            #     frame_video = cv2.resize(frame_video, (width, screen_height))
+            #     padding_side = round((screen_width - frame_video.shape[1])/2)
+            #     frame_video = cv2.copyMakeBorder(frame_video, 0, 0, padding_side, padding_side, cv2.BORDER_CONSTANT) # Adding the padding for keepint the ratio of vertical videos
 
             # Getting the predictions from the model
             results_webcam = model(frame_webcam)
-            results_video = model(frame_video)
-            frame_video = results_video[0].plot()
+            # results_video = model(frame_video)
+            # frame_video = results_video[0].plot()
 
             # Position the webcam frame in the bottom right corner
             x_offset = screen_width - webcam_width
@@ -115,11 +165,11 @@ def capture_and_display(video_path, audio_path, window_name, webcam_index=0, web
             # Overlay the webcam frame on the main video frame and display the window
             frame_video[y_offset:(y_offset+webcam_height), x_offset:(x_offset+webcam_width)] = results_webcam[0].plot()
             cv2.imshow(window_name, frame_video)
-
+            
             if i%12 == 0: # Send some data every 13 iterations            
                 # Computing the similarity score:
                 # Getting the keypoints
-                keypoints_video = results_video[0].keypoints
+                keypoints_video = keypoints_list[i]
                 keypoints_webcam = results_webcam[0].keypoints
 
                 if (keypoints_webcam.xy.cpu().numpy().size != 0) and (keypoints_video.xy.cpu().numpy().size != 0):
@@ -167,7 +217,7 @@ def capture_and_display(video_path, audio_path, window_name, webcam_index=0, web
             final_score = 0
         client_socket.sendall(str(final_score).encode())
 
-def write_to_file(final_score: int, video_path: str): # Be careful about the name of the video
+def write_to_file(final_score: int, video_path: str): 
     filepath = "./Files/performance_scores.csv"
     file = open(filepath, "a+")
     content = ""
@@ -222,8 +272,17 @@ def main():
                         pass # the loop continues
                     
                     print("TIP: If you want to stop playing the video at any given time, press [q].")
+
                     video_path = f"./Files/Dance_routines/{choreography_name}"
-                    capture_and_display(video_path, extract_audio(video_path), 'Combined Video', webcam_index=0)
+                    print(choreography_name[-4])
+
+                    if not f"./Files/Preprocessed_videos/{choreography_name}":
+                        filename, keypoints = preprocesss_video(video_path = video_path)
+                    else:
+                        filename = f"./Files/Preprocessed_videos/{choreography_name}"
+                        keypoints = f"./Files/Preprocessed_videos/{choreography_name[-4]}.csv"
+                    capture_and_display(video_path = filename, audio_path = extract_audio(video_path), keypoints_list=keypoints, window_name='Dancing Game', webcam_index=0)
+
                     print("\nYour final score is displayed on the LCD!")
                     user_input = input("\nPress Y if you want to play more:>")
                     if user_input.lower() != "y":
@@ -244,5 +303,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
