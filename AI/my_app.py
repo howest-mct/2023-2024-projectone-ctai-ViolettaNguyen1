@@ -11,6 +11,7 @@ import time
 import threading
 import socket
 import sys
+import pickle 
 
 server_address = ('192.168.168.167', 8500)  # Connect to RPi (or other server) on ip ... and port ... (the port is set in server.py)
 # the ip address can also be the WiFi ip of your RPi, but this can change. You can print your WiFi IP on your LCD? (if needed)
@@ -30,7 +31,7 @@ def setup_socket_client():
     print("Connected to server")
 
 def extract_audio(video_path, audio_path="./Files/Audio/"):
-    filename = f"{audio_path}{Path(video_path).name}.mp3"
+    filename = f"{audio_path}{Path(video_path).name[:-4]}.mp3"
     if not Path(filename).exists():
         clip = VideoFileClip(video_path)
         clip.audio.write_audiofile(filename = filename, fps = 48000)        
@@ -38,24 +39,25 @@ def extract_audio(video_path, audio_path="./Files/Audio/"):
 
 def preprocesss_video(video_path):
     try:
+        cap_video = cv2.VideoCapture(video_path)
         # Specifications of the desired video output
         filename = Path(video_path).name
         output_file = f'./Files/Preprocessed_videos/{filename}'
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        frame_rate = 30
+        frame_rate = cap_video.get(cv2.CAP_PROP_FPS)
 
         screen_width = 1920
         screen_height = 1080
 
         # Creating a csv-file to save the keypoints to reuse them if needed
-        filepath = f'./Files/Preprocessed_videos/{filename}.csv'
-        file = open(filepath, "w")
+        filepath = f'./Files/Preprocessed_videos/{filename[:-4]}.pkl'
+        file = open(filepath, "wb")
 
         # Creating the VideoWriter object
         out = cv2.VideoWriter(output_file, fourcc, frame_rate, (screen_width, screen_height))
 
-        cap_video = cv2.VideoCapture(video_path)
-        
+        keypoints = []
+        print("Preparing the files... Please wait!")
         while cap_video.isOpened():
             ret_video, frame_video = cap_video.read()
 
@@ -78,7 +80,9 @@ def preprocesss_video(video_path):
 
             frame_video = results_video[0].plot()
             out.write(frame_video)
-            file.write(f"{results_video[0].keypoints}\n")
+            keypoints.append(results_video[0].keypoints)
+            # file.write(f"{results_video[0].keypoints}\n")
+        pickle.dump(keypoints, file)
         return output_file, filepath
     
     finally:
@@ -86,8 +90,17 @@ def preprocesss_video(video_path):
         out.release()
         cap_video.release()
 
-def capture_and_display(video_path, audio_path, keypoints_csv, window_name, webcam_index=0, webcam_width=712, webcam_height=400):
+def capture_and_display(video_path, audio_path, keypoints_pkl, window_name, webcam_index=0, webcam_width=712, webcam_height=400):
     try:
+        # Playing the audio
+        pygame.mixer.init()
+        pygame.mixer.music.load(audio_path)
+        pygame.mixer.music.play()
+
+        # Loading the file 
+        file = open(keypoints_pkl, "rb")
+        list_keypoints_video = pickle.load(file)
+
         # Initialize Pygame for audio playback
         cap_video = cv2.VideoCapture(video_path)
         cap_webcam = cv2.VideoCapture(webcam_index)
@@ -103,17 +116,11 @@ def capture_and_display(video_path, audio_path, keypoints_csv, window_name, webc
         cv2.namedWindow(window_name, cv2.WND_PROP_FULLSCREEN)
         cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
-        # Playing the audio
-        pygame.mixer.init()
-        pygame.mixer.music.load(audio_path)
-        pygame.mixer.music.play()
-        
         # Creating a list for calculating the average performance score and a counter so that i do not calculate the similarity score too often
         performance_score = []
         i = 0
 
         while cap_video.isOpened() and cap_webcam.isOpened():
-            start = time.time()
             # Get the current time of the audio playback
             audio_time = pygame.mixer.music.get_pos() / 1000.0  # Convert milliseconds to seconds
             if audio_time < 0:
@@ -131,6 +138,7 @@ def capture_and_display(video_path, audio_path, keypoints_csv, window_name, webc
             ret_webcam, frame_webcam = cap_webcam.read()
 
             if not ret_video:
+                pygame.mixer.music.stop()
                 break
             if not ret_webcam:
                 break
@@ -169,7 +177,7 @@ def capture_and_display(video_path, audio_path, keypoints_csv, window_name, webc
             if i%12 == 0: # Send some data every 13 iterations            
                 # Computing the similarity score:
                 # Getting the keypoints
-                keypoints_video = keypoints_list[i]
+                keypoints_video = list_keypoints_video[frame_number-1]
                 keypoints_webcam = results_webcam[0].keypoints
 
                 if (keypoints_webcam.xy.cpu().numpy().size != 0) and (keypoints_video.xy.cpu().numpy().size != 0):
@@ -196,16 +204,14 @@ def capture_and_display(video_path, audio_path, keypoints_csv, window_name, webc
                 client_socket.sendall(str(round(score)).encode())
                 print("Score:", int(score))
             i += 1
-            end = time.time()
-            print(end-start)
 
             if cv2.waitKey(int(fps)) & 0xFF == ord('q'):
                 pygame.mixer.music.stop()
                 break
-            
 
     # Releasing resources
     finally:
+        file.close()
         cap_video.release()
         cap_webcam.release()
         cv2.destroyAllWindows()
@@ -274,14 +280,14 @@ def main():
                     print("TIP: If you want to stop playing the video at any given time, press [q].")
 
                     video_path = f"./Files/Dance_routines/{choreography_name}"
-                    print(choreography_name[-4])
+                    print(choreography_name[:-4])
 
-                    if not f"./Files/Preprocessed_videos/{choreography_name}":
+                    filename = f"./Files/Preprocessed_videos/{choreography_name}"
+                    keypoints = f"./Files/Preprocessed_videos/{choreography_name[:-4]}.pkl"
+
+                    if not (Path.is_file(Path(filename)) and Path.is_file(Path(keypoints))):
                         filename, keypoints = preprocesss_video(video_path = video_path)
-                    else:
-                        filename = f"./Files/Preprocessed_videos/{choreography_name}"
-                        keypoints = f"./Files/Preprocessed_videos/{choreography_name[-4]}.csv"
-                    capture_and_display(video_path = filename, audio_path = extract_audio(video_path), keypoints_list=keypoints, window_name='Dancing Game', webcam_index=0)
+                    capture_and_display(video_path = filename, audio_path = extract_audio(video_path), keypoints_pkl=keypoints, window_name='Dancing Game', webcam_index=0)
 
                     print("\nYour final score is displayed on the LCD!")
                     user_input = input("\nPress Y if you want to play more:>")
