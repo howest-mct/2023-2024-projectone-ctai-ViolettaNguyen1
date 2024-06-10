@@ -22,7 +22,7 @@ client_socket = None
 receive_thread = None
 shutdown_flag = threading.Event() # see: https://docs.python.org/3/library/threading.html#event-objects
 
-model = YOLO(r".\AI\runs\pose\train5\weights\best.pt")
+model = YOLO(r".\AI\runs\pose\train6\weights\best.pt")
 #model = YOLO("yolov8n-pose.pt")
 
 def setup_socket_client():
@@ -129,7 +129,7 @@ def capture_and_display(video_path, audio_path, keypoints_pkl, window_name, webc
 
             # Calculate the frame number corresponding to the audio time
             frame_number = int(audio_time * fps)
-            print("FPS:",fps, "Frame number:", frame_number, "Audio time:", audio_time)
+            # print("FPS:",fps, "Frame number:", frame_number, "Audio time:", audio_time) #=> debugging purposes
 
             # Set the video capture to the corresponding frame number
             cap_video.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
@@ -151,7 +151,7 @@ def capture_and_display(video_path, audio_path, keypoints_pkl, window_name, webc
             frame_webcam = cv2.resize(frame_webcam, (webcam_width, webcam_height))
 
             # Getting the predictions from the model
-            results_webcam = model(frame_webcam)
+            results_webcam = model.predict(frame_webcam, verbose = False)
 
             # Position the webcam frame in the bottom right corner
             x_offset = screen_width - webcam_width
@@ -186,11 +186,11 @@ def capture_and_display(video_path, audio_path, keypoints_pkl, window_name, webc
                         if score < 0:
                             score = 0
                     performance_score.append(int(score))  
-                    
+
                 else: 
                     score = 0
                 client_socket.sendall(str(round(score)).encode())
-                print("Score:", int(score))
+                # print("Score:", int(score)) # debugging purposes
             i += 1
 
             if cv2.waitKey(int(fps)) & 0xFF == ord('q'):
@@ -234,7 +234,10 @@ def navigation():
     print("\n1. Play")
     print("2. Scoreboard")
     print("3. Quit\n")
-    user_input = int(input("\nEnter the option number [1/2/3]:>"))
+    try:
+        user_input = int(input("\nEnter the option number [1/2/3]:>"))
+    except Exception:
+        raise ValueError("\nThere is no such option... Try again!")
     if user_input in range(1,4):
         return user_input
     else:
@@ -244,7 +247,10 @@ def menu():
     dir_list = os.listdir("./Files/Dance_routines/")
     for i in range(len(dir_list)):
         print(f"{i+1}. {dir_list[i]}")
-    user_input = int(input("\nEnter the number of the choreography you want to dance to:>\n"))
+    try:
+        user_input = int(input("\nEnter the number of the choreography you want to dance to:>\n"))
+    except Exception:
+        raise ValueError("\nPlease enter a NUMBER")
     if user_input <= len(dir_list):
         return dir_list[user_input-1]
     else:
@@ -268,7 +274,7 @@ def main():
                     print("TIP: If you want to stop playing the video at any given time, press [q].")
 
                     video_path = f"./Files/Dance_routines/{choreography_name}"
-                    print(choreography_name[:-4])
+                    print("Playing: {}".format(choreography_name[:-4]))
 
                     filename = f"./Files/Preprocessed_videos/{choreography_name}"
                     keypoints = f"./Files/Preprocessed_videos/{choreography_name[:-4]}.pkl"
