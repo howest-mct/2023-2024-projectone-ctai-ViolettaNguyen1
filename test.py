@@ -2,54 +2,60 @@ import cv2
 from ultralytics import YOLO
 import time
 from pathlib import Path
+import pickle
 
-model = YOLO(r".\AI\runs\pose\train5\weights\best.pt")
-def preprocesss_video(video_path):
-    start = time.time()
-    filename = Path(video_path).name
-    output_file = f'./Files/Preprocessed_videos/{filename}.mp4'
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    frame_rate = 24  # Frames per second
-    screen_width = 1920
-    screen_height = 1080
+file = open(r".\Files\Preprocessed_videos\Coi Leray - Players _ Deew Choreography Beginner Class.pkl", "rb")
+keypoints = pickle.load(file)
+for keypoint in keypoints: 
+    print(keypoint.xy)
 
-    # Creating the VideoWriter object
-    out = cv2.VideoWriter(output_file, fourcc, frame_rate, (screen_width, screen_height))
+# model = YOLO(r".\AI\runs\pose\train5\weights\best.pt")
+# def preprocesss_video(video_path):
+#     start = time.time()
+#     filename = Path(video_path).name
+#     output_file = f'./Files/Preprocessed_videos/{filename}.mp4'
+#     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+#     frame_rate = 24  # Frames per second
+#     screen_width = 1920
+#     screen_height = 1080
 
-    cap_video = cv2.VideoCapture(video_path)
-    list_keypoints = []
+#     # Creating the VideoWriter object
+#     out = cv2.VideoWriter(output_file, fourcc, frame_rate, (screen_width, screen_height))
+
+#     cap_video = cv2.VideoCapture(video_path)
+#     list_keypoints = []
     
-    while cap_video.isOpened():
-        ret_video, frame_video = cap_video.read()
+#     while cap_video.isOpened():
+#         ret_video, frame_video = cap_video.read()
 
-        if not ret_video:
-            break
+#         if not ret_video:
+#             break
 
-        # Resizing the video to display properly on full screen
-        if (frame_video.shape[1]> frame_video.shape[0]):
-            frame_video = cv2.resize(frame_video, (screen_width, screen_height))
-        # For vertical videos:
-        else:
-            magnifier_ratio = screen_height / int(frame_video.shape[0])
-            width = round(magnifier_ratio* int(frame_video.shape[1]))
-            padding_side = (screen_width-width)/2      
-            frame_video = cv2.resize(frame_video, (width, screen_height))
-            padding_side = round((screen_width - frame_video.shape[1])/2)
-            frame_video = cv2.copyMakeBorder(frame_video, 0, 0, padding_side, padding_side, cv2.BORDER_CONSTANT) # Adding the padding for keepint the ratio of vertical videos
+#         # Resizing the video to display properly on full screen
+#         if (frame_video.shape[1]> frame_video.shape[0]):
+#             frame_video = cv2.resize(frame_video, (screen_width, screen_height))
+#         # For vertical videos:
+#         else:
+#             magnifier_ratio = screen_height / int(frame_video.shape[0])
+#             width = round(magnifier_ratio* int(frame_video.shape[1]))
+#             padding_side = (screen_width-width)/2      
+#             frame_video = cv2.resize(frame_video, (width, screen_height))
+#             padding_side = round((screen_width - frame_video.shape[1])/2)
+#             frame_video = cv2.copyMakeBorder(frame_video, 0, 0, padding_side, padding_side, cv2.BORDER_CONSTANT) # Adding the padding for keepint the ratio of vertical videos
         
-        results_video = model.predict(frame_video, verbose = False)
+#         results_video = model.predict(frame_video, verbose = False)
 
-        frame_video = results_video[0].plot()
-        out.write(frame_video)
-        list_keypoints.append(results_video[0].keypoints)
+#         frame_video = results_video[0].plot()
+#         out.write(frame_video)
+#         list_keypoints.append(results_video[0].keypoints)
 
-    out.release()
-    end = time.time()
-    print(end-start)
-    return output_file, list_keypoints
+#     out.release()
+#     end = time.time()
+#     print(end-start)
+#     return output_file, list_keypoints
 
-filename, keypoints = preprocesss_video(r"C:\Users\viola\Downloads\LE SSERAFIM - ‘SMART’ 🩵🌊 Mirrored Dance Cover _ Karina Balcerzak.mp4")
-print(filename, len(keypoints))
+# filename, keypoints = preprocesss_video(r"C:\Users\viola\Downloads\LE SSERAFIM - ‘SMART’ 🩵🌊 Mirrored Dance Cover _ Karina Balcerzak.mp4")
+# print(filename, len(keypoints))
 # import pygame
 # from threading import Thread
 # from moviepy.editor import VideoFileClip
