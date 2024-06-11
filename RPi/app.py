@@ -62,7 +62,10 @@ def handle_client(sock, shutdown_flag):
             except Exception:
                 lcd.clear()
                 lcd.display_message(message = data, line=lcd.LCD_LINE_1)
-                score_type = "Final score"
+                if len(data) <= 16:
+                    score_type = "Final score"
+                else:
+                    score_type = ""
 
 
     except socket.timeout: # capture the timeouts 
