@@ -189,4 +189,5 @@ cython_debug/
 # Personal performance scores
 /Files/performance_scores.csv
 
-# *.pkl => Not saving the pickle files
+# Ignoring pickle files
+*.pkl 
