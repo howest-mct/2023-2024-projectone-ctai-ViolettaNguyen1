@@ -240,6 +240,7 @@ def main():
     setup_socket_client()
     try:
         print("\n Welcome to the dancing game!")
+        client_socket.sendall("Welcome!".encode())
         while True:
             try:
                 option = navigation()
@@ -258,6 +259,7 @@ def main():
                     keypoints = f"./Files/Preprocessed_videos/{choreography_name[:-4]}.pkl"
 
                     if not (Path.is_file(Path(filename)) and Path.is_file(Path(keypoints))):
+                        client_socket.sendall("Loading...".encode())
                         filename, keypoints = preprocesss_video(video_path = video_path)
 
                     print("\nPlaying: {}".format(choreography_name[:-4]))
@@ -268,7 +270,10 @@ def main():
                     if user_input.lower() != "y":
                         break
                 elif option == 2:
-                    Scoreboard.print_top_k_scores(10)
+                    client_socket.sendall("Scoreboard!".encode())
+                    list_scores = Scoreboard.print_top_k_scores(10)
+                    best_score = list_scores[0].score
+                    client_socket.sendall(f"Your best score is: {str(best_score)}".encode())
                 elif option == 3:
                     break
             except ValueError as ex:

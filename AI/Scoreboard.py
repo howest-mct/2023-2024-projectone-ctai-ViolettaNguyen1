@@ -2,6 +2,7 @@ import csv
 from datetime import datetime
 from pathlib import Path
 import os
+import time 
 
 class Score:
     def __init__(self, pscore, pchoreography_name, pdatetime) -> None:
@@ -39,23 +40,21 @@ class Score:
 
 class Scoreboard:
     def write_to_file(final_score: int, video_path: str): 
-        filepath = "./Files/performance_scores.csv"
-        file = open(filepath, "a+", encoding="utf-8")
-        content = ""
-        if os.path.getsize(filepath) == 0:
-            content = "Score,ChoreographyName,DateTime\n"
-        time_to_write = datetime.now().strftime("%Y%m%d_%H%M%S")
-
-        # Some exception handling
         try:
-            choreography_name = Path(video_path).name
-        except Exception:
-            print("The program was unable to encode the name. Rename the file for proper displaying.")
-            choreography_name = "InvalidName"
+            filepath = "./Files/performance_scores.csv"
+            file = open(filepath, "a+", encoding="utf-8")
+            content = ""
+            if os.path.getsize(filepath) == 0:
+                content = "Score,ChoreographyName,DateTime\n"
+            time_to_write = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-        content += f"{final_score},{str(choreography_name)[:-4]},{time_to_write}\n"
-        file.write(content)
-        file.close()
+            choreography_name = Path(video_path).name[:-4]
+            content += f"{final_score},{str(choreography_name)},{time_to_write}\n"
+            file.write(content)
+        except Exception as ex:
+            print("The scores cannot be saved...", ex)
+        finally:
+            file.close()
 
     def read_scoreboard():
         file = r".\Files\performance_scores.csv"
@@ -74,6 +73,8 @@ class Scoreboard:
         list_scores.sort(reverse=True)
         for i in range(k):
             print(f"\n{i+1}.", list_scores[i])
+            time.sleep(0.2)
+        return list_scores
         
 
         
