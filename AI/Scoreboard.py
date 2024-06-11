@@ -71,8 +71,9 @@ class Scoreboard:
     def print_top_k_scores(k: int):
         list_scores = Scoreboard.read_scoreboard()
         list_scores.sort(reverse=True)
+        print("\nScoreboard:")
         for i in range(k):
-            print(f"\n{i+1}.", list_scores[i])
+            print(f"{i+1}.", list_scores[i])
             time.sleep(0.2)
         return list_scores
         
