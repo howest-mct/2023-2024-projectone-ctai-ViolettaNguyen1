@@ -6,11 +6,9 @@ from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances
 import numpy as np
 from pathlib import Path
 import os
-from datetime import datetime
 import time
 import threading
 import socket
-import sys
 import pickle 
 from Scoreboard import Scoreboard
 
@@ -58,7 +56,7 @@ def preprocesss_video(video_path):
         out = cv2.VideoWriter(output_file, fourcc, frame_rate, (screen_width, screen_height))
 
         keypoints = []
-        print("Preparing the files... Please wait!")
+        print("\nPreparing the files... Please wait!")
         while cap_video.isOpened():
             ret_video, frame_video = cap_video.read()
 
@@ -82,7 +80,6 @@ def preprocesss_video(video_path):
             frame_video = results_video[0].plot()
             out.write(frame_video)
             keypoints.append(results_video[0].keypoints)
-            # file.write(f"{results_video[0].keypoints}\n")
         pickle.dump(keypoints, file)
         return output_file, filepath
     
@@ -93,12 +90,7 @@ def preprocesss_video(video_path):
 
 def capture_and_display(video_path, audio_path, keypoints_pkl, window_name, webcam_index=0, webcam_width=712, webcam_height=400):
     try:
-        # Playing the audio
-        pygame.mixer.init()
-        pygame.mixer.music.load(audio_path)
-        pygame.mixer.music.play()
-
-        # Loading the file 
+       # Loading the file 
         file = open(keypoints_pkl, "rb")
         list_keypoints_video = pickle.load(file)
 
@@ -116,6 +108,11 @@ def capture_and_display(video_path, audio_path, keypoints_pkl, window_name, webc
         # Make the application run in a full window, full-screen mode
         cv2.namedWindow(window_name, cv2.WND_PROP_FULLSCREEN)
         cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+
+        # Playing the audio
+        pygame.mixer.init()
+        pygame.mixer.music.load(audio_path)
+        pygame.mixer.music.play()
 
         # Creating a list for calculating the average performance score and a counter so that i do not calculate the similarity score too often
         performance_score = []
@@ -206,29 +203,11 @@ def capture_and_display(video_path, audio_path, keypoints_pkl, window_name, webc
         if len(performance_score) != 0:
             final_score = int(sum(performance_score)/len(performance_score))
             if final_score != 0:
-                write_to_file(final_score, video_path)
+                Scoreboard.write_to_file(final_score, video_path)
         else:
             final_score = 0
+        client_socket.sendall("Final score:".encode())
         client_socket.sendall(str(final_score).encode())
-
-def write_to_file(final_score: int, video_path: str): 
-    filepath = "./Files/performance_scores.csv"
-    file = open(filepath, "a+")
-    content = ""
-    if os.path.getsize(filepath) == 0:
-        content = "Score,ChoreographyName,DateTime\n"
-    time_to_write = datetime.now().strftime("%Y%m%d_%H%M%S")
-
-    # Some exception handling
-    try:
-        choreography_name = Path(video_path).name.encode("utf-8")
-    except Exception:
-        print("The program was unable to encode the name. Rename the file for proper displaying.")
-        choreography_name = "InvalidName"
-
-    content += f"{final_score},{str(choreography_name)[2:-4]},{time_to_write}\n"
-    file.write(content)
-    file.close()
 
 def navigation():
     print("\n1. Play")
@@ -274,13 +253,14 @@ def main():
                     print("TIP: If you want to stop playing the video at any given time, press [q].")
 
                     video_path = f"./Files/Dance_routines/{choreography_name}"
-                    print("Playing: {}".format(choreography_name[:-4]))
 
                     filename = f"./Files/Preprocessed_videos/{choreography_name}"
                     keypoints = f"./Files/Preprocessed_videos/{choreography_name[:-4]}.pkl"
 
                     if not (Path.is_file(Path(filename)) and Path.is_file(Path(keypoints))):
                         filename, keypoints = preprocesss_video(video_path = video_path)
+
+                    print("\nPlaying: {}".format(choreography_name[:-4]))
                     capture_and_display(video_path = filename, audio_path = extract_audio(video_path), keypoints_pkl=keypoints, window_name='Dancing Game', webcam_index=0)
 
                     print("\nYour final score is displayed on the LCD!")
@@ -298,6 +278,8 @@ def main():
         print("\nDisconnecting...")
         shutdown_flag.set()
     finally:
+        client_socket.sendall("Bye!".encode())
+        time.sleep(0.5)
         client_socket.close()
         print("\nExiting the application... Bye!")
 
