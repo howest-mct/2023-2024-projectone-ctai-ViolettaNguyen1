@@ -1,6 +1,6 @@
 # TODO: ignore venv
 
-# Video files (general rule)
+# Video files (general rule) and audio 
 *.mp4
 *.mov
 *.avi
@@ -12,6 +12,7 @@
 *.mpeg
 *.m4v
 *.3gp
+*.mp3
 
 # Exception: Unignore a specific video
 # !important_presentation.mp4  # This line overrides the general rule; uncomment to make active
@@ -187,3 +188,5 @@ cython_debug/
 
 # Personal performance scores
 /Files/performance_scores.csv
+
+# *.pkl => Not saving the pickle files
