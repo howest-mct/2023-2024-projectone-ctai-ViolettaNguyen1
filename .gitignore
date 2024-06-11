@@ -186,4 +186,4 @@ cython_debug/
 #.idea/
 
 # Personal performance scores
-./Files/performance_scores.csv
+/Files/performance_scores.csv
