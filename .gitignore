@@ -191,3 +191,5 @@ cython_debug/
 
 # Ignoring pickle files
 *.pkl 
+yolo*.pt 
+*.ipynb

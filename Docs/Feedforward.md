@@ -117,3 +117,9 @@ This is the feedback on my questions.
 - Feedback 1: It is just the model being uploaded, nothing much can be done with it.
 
 - Feedback 2: Preprocess the video! Save the video with the detected pose key points and list with kypoints xy position. Then just capture the video from the webcam.
+
+## Conversation 7 (Date: 11/06/2024) => Tour moment
+
+Lecturers: Dieter Roobrouck and Frederik Waeyaert
+
+- Feedback: Confusion about the scoring system => on the presentation explain how it works, what is the max score. Maybe convert the score to a percentage, so it is understandable for everyone.
