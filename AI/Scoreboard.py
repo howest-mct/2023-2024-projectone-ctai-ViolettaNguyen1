@@ -68,7 +68,7 @@ class Scoreboard:
             list_scores.append(score)
         return list_scores
     
-    def print_top_k_scores(k: int):
+    def print_top_k_scores(k=3):
         list_scores = Scoreboard.read_scoreboard()
         list_scores.sort(reverse=True)
         print("\nScoreboard:")
