@@ -57,12 +57,12 @@ def handle_client(sock, shutdown_flag):
                     score_type = ""
                 print("Received from client:", data) # print the received data, or do something with it
                 if prev_data != data:
-                    lcd.display_message(message = f"{data}   ", line=lcd.LCD_LINE_2)
+                    lcd.display_message(message = f"{data}%   ", line=lcd.LCD_LINE_2)
                 prev_data = data
             except Exception:
                 lcd.clear()
                 lcd.display_message(message = data, line=lcd.LCD_LINE_1)
-                if len(data) <= 16:
+                if data == "Final score:":
                     score_type = "Final score"
                 else:
                     score_type = ""
