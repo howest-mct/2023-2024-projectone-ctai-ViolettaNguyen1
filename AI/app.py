@@ -2,7 +2,6 @@ import cv2
 import pygame
 from moviepy.editor import VideoFileClip
 from ultralytics import YOLO
-from sklearn.metrics.pairwise import cosine_similarity, euclidean_distances
 import numpy as np
 from pathlib import Path
 import os
@@ -11,6 +10,7 @@ import threading
 import socket
 import pickle 
 from Scoreboard import Scoreboard
+import math
 
 server_address = ('192.168.168.167', 8500)  # Connect to RPi (or other server) on ip ... and port ... (the port is set in server.py)
 # the ip address can also be the WiFi ip of your RPi, but this can change. You can print your WiFi IP on your LCD? (if needed)
@@ -21,7 +21,6 @@ receive_thread = None
 shutdown_flag = threading.Event() # see: https://docs.python.org/3/library/threading.html#event-objects
 
 model = YOLO(r".\AI\runs\pose\train6\weights\best.pt")
-#model = YOLO("yolov8n-pose.pt")
 
 def setup_socket_client():
     global client_socket, receive_thread
@@ -171,15 +170,15 @@ def capture_and_display(video_path, audio_path, keypoints_pkl, window_name, webc
 
                     difference = 0
 
-                    # Calculating the differences between normalized keypoints
-                    for i in range(34):
-                        difference += (10*abs(person_video[0][i]-person_webcam[0][i]))**2*100 # Incorporating second degree
-
                     # Adding penalty for when most keypoints are not visible
                     if person_webcam[np.nonzero(person_webcam)].size <= 14:
                         score = 0
                     else:
-                        score = 1000 - (difference/34) 
+                        # Calculating the differences between normalized keypoints
+                        for i in range(34):
+                            difference += (100*abs(person_video[0][i]-person_webcam[0][i]))**2 # Incorporating second degree
+
+                        score = 100 - (math.sqrt(difference/17)) 
                         if score < 0:
                             score = 0
                     performance_score.append(int(score))  
@@ -270,10 +269,18 @@ def main():
                     if user_input.lower() != "y":
                         break
                 elif option == 2:
-                    client_socket.sendall("Scoreboard!".encode())
-                    list_scores = Scoreboard.print_top_k_scores(10)
-                    best_score = list_scores[0].score
-                    client_socket.sendall(f"Your best score is: {str(best_score)}".encode())
+                    length_scoreboard = len(Scoreboard.read_scoreboard())
+                    if length_scoreboard != 0:
+                        client_socket.sendall("Scoreboard!".encode())
+                        if length_scoreboard >= 10:
+                            k = 10
+                        else:
+                            k = length_scoreboard
+                        list_scores = Scoreboard.print_top_k_scores(k)
+                        best_score = list_scores[0].score
+                        client_socket.sendall(f"Your best score is: {str(best_score)}%".encode())
+                    else:
+                        print("No records in the scoreboard...")
                 elif option == 3:
                     break
             except ValueError as ex:
