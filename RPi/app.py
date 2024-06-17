@@ -66,6 +66,7 @@ def handle_client(sock, shutdown_flag):
                     score_type = "Final score"
                 else:
                     score_type = ""
+                prev_data = data
 
 
     except socket.timeout: # capture the timeouts 
