@@ -20,7 +20,7 @@ client_socket = None
 receive_thread = None
 shutdown_flag = threading.Event() # see: https://docs.python.org/3/library/threading.html#event-objects
 
-model = YOLO(r".\AI\runs\pose\train7\weights\best.pt")
+model = YOLO(r".\AI\runs\pose\train8\weights\best.pt")
 
 def setup_socket_client():
     global client_socket, receive_thread
@@ -72,7 +72,8 @@ def preprocesss_video(video_path):
                 padding_side = (screen_width-width)/2      
                 frame_video = cv2.resize(frame_video, (width, screen_height))
                 padding_side = round((screen_width - frame_video.shape[1])/2)
-                frame_video = cv2.copyMakeBorder(frame_video, 0, 0, padding_side, padding_side, cv2.BORDER_CONSTANT) # Adding the padding for keepint the ratio of vertical videos
+                frame_video = cv2.copyMakeBorder(frame_video, 0, 0, padding_side, padding_side, cv2.BORDER_CONSTANT) # Adding the padding for keepint the ratio of vertical videos\
+                frame_video = cv2.resize(frame_video, (screen_width, screen_height)) # To avoid bugs and resize it perfectly
             
             results_video = model.predict(frame_video, verbose = False)
 
@@ -87,7 +88,7 @@ def preprocesss_video(video_path):
         out.release()
         cap_video.release()
 
-def capture_and_display(video_path, audio_path, keypoints_pkl, window_name, webcam_index=0, webcam_width=712, webcam_height=400):
+def capture_and_display(video_path, audio_path, keypoints_pkl, window_name, difficulty, webcam_index=0, webcam_width=712, webcam_height=400):
     try:
        # Loading the file 
         file = open(keypoints_pkl, "rb")
@@ -160,7 +161,7 @@ def capture_and_display(video_path, audio_path, keypoints_pkl, window_name, webc
 
                 # Computing the similarity score:
                 # Getting the keypoints
-                keypoints_video = list_keypoints_video[(frame_number-1)-10] # So that a little delay from the webcam does not mess up the score
+                keypoints_video = list_keypoints_video[(frame_number-1)-(10*difficulty)] # So that a little delay from the webcam does not mess up the score
                 keypoints_webcam = results_webcam[0].keypoints
 
                 if (keypoints_webcam.xy.cpu().numpy().size != 0) and (keypoints_video.xy.cpu().numpy().size != 0):
@@ -182,9 +183,13 @@ def capture_and_display(video_path, audio_path, keypoints_pkl, window_name, webc
 
                         # It is hard to get a score higher than 80% , so I am creating a boost
                         if total_error <= 20:
-                            total_error /= 1.2
+                            total_error /= 0.3*difficulty
                         elif total_error <= 10:
-                            total_error /= 1.5
+                            total_error /= 0.5*difficulty
+
+                        # At the same time, getting a middle score is way too easy even without doing anything, so I am adding a punishment
+                        elif total_error >= 50:
+                            total_error *= 0.5*difficulty
 
                         score = 100 -  total_error
                         if score < 0:
@@ -194,7 +199,7 @@ def capture_and_display(video_path, audio_path, keypoints_pkl, window_name, webc
                 else: 
                     score = 0
                 client_socket.sendall(str(round(score)).encode())
-                # print("Score:", int(score)) # debugging purposes
+                
             i += 1
 
             if cv2.waitKey(int(fps)) & 0xFF == ord('q'):
@@ -241,6 +246,24 @@ def menu():
         return dir_list[user_input-1]
     else:
         raise ValueError("\nThe number you entered does not correspond to any video in the library...")
+    
+def difficulty():
+    try:
+        print("1. Easy")
+        print("2. Medium")
+        print("3. Hard")
+
+        user_input = int(input("\nEnter the difficulty level [1/2/3]:>"))
+        if user_input not in range(1,4):
+            raise ValueError("\nThe number you entered does not correspond to any difficulty level...")
+        elif user_input == 1:
+            return 3
+        elif user_input == 2:
+            return 2
+        elif user_input == 3:
+            return 1
+    except Exception:
+        raise ValueError("\nPlease enter a NUMBER")
   
 def main():
     global client_socket, receive_thread
@@ -253,6 +276,7 @@ def main():
                 option = navigation()
                 if option == 1:
                     try:
+                        difficulty_level = difficulty()
                         choreography_name = menu()
                     except ValueError as ex:
                         print(ex)
@@ -270,7 +294,7 @@ def main():
                         filename, keypoints = preprocesss_video(video_path = video_path)
 
                     print("\nPlaying: {}".format(choreography_name[:-4]))
-                    capture_and_display(video_path = filename, audio_path = extract_audio(video_path), keypoints_pkl=keypoints, window_name='Dancing Game', webcam_index=0)
+                    capture_and_display(video_path = filename, audio_path = extract_audio(video_path), keypoints_pkl=keypoints, window_name='Dancing Game', webcam_index=0, difficulty=difficulty_level)
 
                     print("\nYour final score is displayed on the LCD!")
                     user_input = input("\nPress Y if you want to play more:>")
