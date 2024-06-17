@@ -20,7 +20,7 @@ client_socket = None
 receive_thread = None
 shutdown_flag = threading.Event() # see: https://docs.python.org/3/library/threading.html#event-objects
 
-model = YOLO(r".\AI\runs\pose\train6\weights\best.pt")
+model = YOLO(r".\AI\runs\pose\train7\weights\best.pt")
 
 def setup_socket_client():
     global client_socket, receive_thread
@@ -125,7 +125,6 @@ def capture_and_display(video_path, audio_path, keypoints_pkl, window_name, webc
 
             # Calculate the frame number corresponding to the audio time
             frame_number = int(audio_time * fps)
-            # print("FPS:",fps, "Frame number:", frame_number, "Audio time:", audio_time) #=> debugging purposes
 
             # Set the video capture to the corresponding frame number
             cap_video.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
@@ -157,10 +156,11 @@ def capture_and_display(video_path, audio_path, keypoints_pkl, window_name, webc
             frame_video[y_offset:(y_offset+webcam_height), x_offset:(x_offset+webcam_width)] = results_webcam[0].plot()
             cv2.imshow(window_name, frame_video)
             
-            if i%12 == 0: # Send some data every 12 iterations            
+            if i%12 == 0: # Send some data every 12 iterations
+
                 # Computing the similarity score:
                 # Getting the keypoints
-                keypoints_video = list_keypoints_video[frame_number-1]
+                keypoints_video = list_keypoints_video[(frame_number-1)-10] # So that a little delay from the webcam does not mess up the score
                 keypoints_webcam = results_webcam[0].keypoints
 
                 if (keypoints_webcam.xy.cpu().numpy().size != 0) and (keypoints_video.xy.cpu().numpy().size != 0):
@@ -176,9 +176,17 @@ def capture_and_display(video_path, audio_path, keypoints_pkl, window_name, webc
                     else:
                         # Calculating the differences between normalized keypoints
                         for i in range(34):
-                            difference += (100*abs(person_video[0][i]-person_webcam[0][i]))**2 # Incorporating second degree
+                            difference += (100*abs(person_video[0][i]-person_webcam[0][i]))**2 # Incorporating second degree to magnify big errors
 
-                        score = 100 - (math.sqrt(difference/17)) 
+                        total_error = (math.sqrt(difference/34))
+
+                        # It is hard to get a score higher than 80% , so I am creating a boost
+                        if total_error <= 20:
+                            total_error /= 1.2
+                        elif total_error <= 10:
+                            total_error /= 1.5
+
+                        score = 100 -  total_error
                         if score < 0:
                             score = 0
                     performance_score.append(int(score))  
